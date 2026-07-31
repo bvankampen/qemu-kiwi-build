@@ -393,6 +393,10 @@ def main():
         '-n', '--dry-run', action='store_true',
         help="Print the native QEMU execution command without launching the VM"
     )
+    parser.add_argument(
+        '--debug', action='store_true',
+        help="Run kiwi-ng inside the guest VM in debug mode (highly verbose)"
+    )
 
     args, remaining = parser.parse_known_args()
 
@@ -594,6 +598,7 @@ def main():
     print(f"  Output Dir:        {abs_out_dir}")
     print(f"  Cache Dir:         {abs_cache_dir}")
     print(f"  Repository URL:    {repo_url}")
+    print(f"  KIWI Debug Mode:   {'Enabled' if args.debug else 'Disabled'}")
     if extra_cmd:
         print(f"  Extra KIWI Args:   {extra_cmd}")
     print("==================================================")
@@ -765,6 +770,8 @@ def main():
         proc.kill()
         sys.exit(1)
 
+    debug_flag = "--debug" if args.debug else ""
+
     remote_script = f"""
 set -e
 echo "[ INFO    ]: Mounting shared folders inside VM..."
@@ -776,7 +783,7 @@ echo "[ INFO    ]: Cleaning up guest build directory..."
 rm -rf /result/*
 
 echo "[ INFO    ]: Starting KIWI build inside VM..."
-kiwi-ng --logfile /bundle/result.log --profile {profile} system build --description /description --target-dir /result --set-repo {repo_url} {extra_cmd}
+kiwi-ng {debug_flag} --logfile /bundle/result.log --profile {profile} system build --description /description --target-dir /result --set-repo {repo_url} {extra_cmd}
 
 echo "[ INFO    ]: Bundling build results back to host..."
 kiwi-ng result bundle --id 0 --target-dir /result --bundle-dir /bundle

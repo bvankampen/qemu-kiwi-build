@@ -112,7 +112,7 @@ usage: kiwi-build.py [-h] [-i {leap15,leap16}] [-b {leap,tumbleweed,ubuntu,unive
                      [-p PROFILE] [-a ARCH] [-o OUTPUT_DIR] [-c CACHE_DIR]
                      [-d DESC_DIR] [-r REPO_URL] [-m MEMORY] [-s SMP]
                      [--cpu CPU] [--machine MACHINE] [--accel {auto,true,false}]
-                     [--no-parallels] [-S PARALLELS_DIR] [-l] [-v] [-n]
+                     [--no-parallels] [-S PARALLELS_DIR] [-l] [-v] [-n] [--debug]
 ```
 
 | Argument | Short | Default | Description |
@@ -135,6 +135,7 @@ usage: kiwi-build.py [-h] [-i {leap15,leap16}] [-b {leap,tumbleweed,ubuntu,unive
 | `--list-boxes`| `-l` | | List all supported build box configurations and exit |
 | `--verbose`   | `-v` | `False` | Show raw QEMU serial console output in addition to build logs |
 | `--dry-run`   | `-n` | `False` | Print the formulated QEMU command and exit without starting the VM |
+| `--debug`     | | `False` | Run `kiwi-ng` in debug mode inside the VM (verbose progress output) |
 
 ### Examples
 
