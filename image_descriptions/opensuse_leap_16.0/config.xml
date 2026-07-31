@@ -13,8 +13,8 @@
         <profile name="kvm" description="Minimal for KVM" arch="aarch64"/>
         <profile name="kvm-encrypt" description="Minimal for KVM (Encrypted)" arch="aarch64"/>
         <profile name="VMware" description="Minimal for VMware" arch="x86_64"/>
-        <profile name="Vagrant" description="Minimal for Vagrant" arch="x86_64"/>
-        <profile name="Vagrant-parallels" description="Minimal for Vagrant (Parallels)" arch="x86_64"/>
+        <profile name="Vagrant" description="Minimal for Vagrant" arch="aarch64,x86_64"/>
+        <profile name="Vagrant-parallels" description="Minimal for Vagrant (Parallels)" arch="aarch64,x86_64"/>
         <profile name="MS-HyperV" description="Minimal for Hyper-V" arch="aarch64,x86_64"/>
         <profile name="Cloud" description="Minimal for Cloud" arch="aarch64,x86_64"/>
         <profile name="RaspberryPi" description="Minimal for the Raspberry Pi" arch="aarch64"/>
