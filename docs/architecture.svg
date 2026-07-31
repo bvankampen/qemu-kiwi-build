@@ -32,10 +32,10 @@
 
     <!-- Markers for Arrows with slight offsets to prevent overlaps -->
     <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b" />
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#1e293b" />
     </marker>
     <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#519312" />
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#15803d" />
     </marker>
     <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#1d4ed8" />
@@ -43,14 +43,15 @@
   </defs>
 
   <style>
-    .title { font-family: system-ui, -apple-system, sans-serif; font-weight: 700; font-size: 16px; fill: #1e293b; }
-    .subtitle { font-family: system-ui, -apple-system, sans-serif; font-size: 12px; fill: #64748b; font-weight: 500; }
-    .node-text { font-family: system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 13px; fill: #ffffff; }
-    .node-text-dark { font-family: system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 13px; fill: #1e293b; }
-    .node-text-sm { font-family: system-ui, -apple-system, sans-serif; font-size: 11px; fill: #94a3b8; }
-    .edge-text { font-family: system-ui, -apple-system, sans-serif; font-weight: 500; font-size: 11px; fill: #475569; }
-    .edge-text-blue { font-family: system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 11px; fill: #2563eb; }
-    .edge-text-green { font-family: system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 11px; fill: #16a34a; }
+    .title { font-family: system-ui, -apple-system, sans-serif; font-weight: 700; font-size: 16px; fill: #0f172a; }
+    .subtitle { font-family: system-ui, -apple-system, sans-serif; font-size: 12px; fill: #1e293b; font-weight: 500; }
+    .node-text { font-family: system-ui, -apple-system, sans-serif; font-weight: 700; font-size: 13px; fill: #ffffff; }
+    .node-text-dark { font-family: system-ui, -apple-system, sans-serif; font-weight: 700; font-size: 13px; fill: #0f172a; }
+    .node-text-sm { font-family: system-ui, -apple-system, sans-serif; font-size: 11px; fill: #ffffff; opacity: 0.95; }
+    .node-text-sm-dark { font-family: system-ui, -apple-system, sans-serif; font-size: 11px; fill: #334155; font-weight: 600; }
+    .edge-text { font-family: system-ui, -apple-system, sans-serif; font-weight: 700; font-size: 11px; fill: #0f172a; }
+    .edge-text-blue { font-family: system-ui, -apple-system, sans-serif; font-weight: 700; font-size: 11px; fill: #1d4ed8; }
+    .edge-text-green { font-family: system-ui, -apple-system, sans-serif; font-weight: 700; font-size: 11px; fill: #15803d; }
   </style>
 
   <!-- Background Canvas -->
@@ -74,16 +75,16 @@
   <g filter="url(#shadow-sm)">
     <rect x="50" y="105" width="220" height="75" rx="8" fill="url(#python-grad)" stroke="#2563eb" stroke-width="1" />
     <text x="70" y="132" class="node-text">kiwi-build.py</text>
-    <text x="70" y="149" class="node-text-sm" fill="#bfdbfe">Python 3 Orchestrator</text>
-    <text x="70" y="164" class="node-text-sm" fill="#93c5fd">Manages VM life &amp; paramiko SSH</text>
+    <text x="70" y="149" class="node-text-sm">Python 3 Orchestrator</text>
+    <text x="70" y="164" class="node-text-sm">Manages VM life &amp; paramiko SSH</text>
   </g>
 
   <!-- 4. Host Node: Real-time CLI Logs & Progress Bar -->
   <g filter="url(#shadow-sm)">
     <rect x="50" y="280" width="220" height="75" rx="8" fill="url(#cli-grad)" stroke="#334155" stroke-width="1" />
     <text x="70" y="307" class="node-text" fill="#38bdf8">Real-time CLI Logs</text>
-    <text x="70" y="324" class="node-text-sm" fill="#cbd5e1">Stdout / Stderr stream</text>
-    <text x="70" y="339" class="node-text-sm" fill="#94a3b8">Unbuffered Paramiko PTY channel</text>
+    <text x="70" y="324" class="node-text-sm">Stdout / Stderr stream</text>
+    <text x="70" y="339" class="node-text-sm">Unbuffered Paramiko PTY channel</text>
   </g>
 
   <!-- 5. VM Guest Node: /description (VirtIO-9p Mount) -->
@@ -91,7 +92,7 @@
     <rect x="390" y="165" width="145" height="65" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" />
     <rect x="390" y="165" width="145" height="6" rx="3" fill="#64748b" />
     <text x="405" y="195" class="node-text-dark">/description</text>
-    <text x="405" y="213" class="node-text-sm">Read-only Configuration</text>
+    <text x="405" y="213" class="node-text-sm-dark">Read-only Configuration</text>
   </g>
 
   <!-- 6. VM Guest Node: /bundle (VirtIO-9p Mount) -->
@@ -99,22 +100,22 @@
     <rect x="390" y="295" width="145" height="65" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" />
     <rect x="390" y="295" width="145" height="6" rx="3" fill="#64748b" />
     <text x="405" y="325" class="node-text-dark">/bundle</text>
-    <text x="405" y="343" class="node-text-sm">Read-write Output</text>
+    <text x="405" y="343" class="node-text-sm-dark">Read-write Output</text>
   </g>
 
   <!-- 7. VM Guest Node: kiwi-ng Builder inside VM -->
   <g filter="url(#shadow-sm)">
     <rect x="575" y="210" width="145" height="110" rx="8" fill="url(#suse-grad)" stroke="#3f6d08" stroke-width="1" />
     <text x="592" y="240" class="node-text">kiwi-ng builder</text>
-    <text x="592" y="260" class="node-text-sm" fill="#d9f99d">Appliance engine</text>
-    <text x="592" y="285" class="node-text-sm" fill="#e2f8a4">Executes system build</text>
-    <text x="592" y="300" class="node-text-sm" fill="#e2f8a4">&amp; packages Zypper</text>
+    <text x="592" y="260" class="node-text-sm">Appliance engine</text>
+    <text x="592" y="285" class="node-text-sm">Executes system build</text>
+    <text x="592" y="300" class="node-text-sm">&amp; packages Zypper</text>
   </g>
 
   <!-- Flow Edges (Orthogonal with clean 10px rounded corners) -->
 
   <!-- A. Spawns VM: kiwi-build.py -> QEMU VM border -->
-  <path d="M 270 142.5 L 350 142.5" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrow-blue)" />
+  <path d="M 270 142.5 L 350 142.5" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrow-blue)" />
   <text x="280" y="134" class="edge-text-blue">1. Spawns VM</text>
 
   <!-- B. SSH Tunnel: kiwi-build.py -> kiwi-ng builder -->
@@ -122,24 +123,24 @@
   <text x="175" y="222" class="edge-text-blue">2. Establishes SSH session</text>
 
   <!-- C. /description mount: Host files (image_descriptions/) -> /description VM -->
-  <path d="M 270 160 L 320 160 A 10 10 0 0 1 330 170 L 330 187.5 A 10 10 0 0 0 340 197.5 L 380 197.5" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="2 2" marker-end="url(#arrow)" />
+  <path d="M 270 160 L 320 160 A 10 10 0 0 1 330 170 L 330 187.5 A 10 10 0 0 0 340 197.5 L 380 197.5" fill="none" stroke="#1e293b" stroke-width="1.5" stroke-dasharray="2 2" marker-end="url(#arrow)" />
   <text x="282" y="148" class="edge-text">Mounts Host</text>
   <text x="282" y="158" class="edge-text">image_descriptions/</text>
 
   <!-- D. /bundle mount: Host files (target_image/) <- /bundle VM -->
-  <path d="M 280 290 L 320 290 A 10 10 0 0 1 330 300 L 330 317.5 A 10 10 0 0 0 340 327.5 L 380 327.5" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="2 2" marker-start="url(#arrow)" />
+  <path d="M 280 290 L 320 290 A 10 10 0 0 1 330 300 L 330 317.5 A 10 10 0 0 0 340 327.5 L 380 327.5" fill="none" stroke="#1e293b" stroke-width="1.5" stroke-dasharray="2 2" marker-start="url(#arrow)" />
   <text x="282" y="348" class="edge-text">Mounts Host</text>
   <text x="282" y="358" class="edge-text">target_image/</text>
 
   <!-- E. Read config: /description -> kiwi-ng builder -->
-  <path d="M 535 197.5 L 565 197.5" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
+  <path d="M 535 197.5 L 565 197.5" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
   <text x="540" y="190" class="edge-text">Reads config.xml</text>
 
   <!-- F. Write results: kiwi-ng builder -> /bundle -->
-  <path d="M 575 327.5 L 545 327.5" fill="none" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)" />
+  <path d="M 575 327.5 L 545 327.5" fill="none" stroke="#15803d" stroke-width="1.5" marker-end="url(#arrow-green)" />
   <text x="540" y="345" class="edge-text-green">Outputs image &amp; logs</text>
 
   <!-- G. Output Logs stream: kiwi-ng builder -> CLI Logs (Unbuffered) -->
-  <path d="M 575 290 L 320 290 A 10 10 0 0 0 310 300 L 310 307.5 A 10 10 0 0 1 300 317.5 L 280 317.5" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
+  <path d="M 575 290 L 320 290 A 10 10 0 0 0 310 300 L 310 307.5 A 10 10 0 0 1 300 317.5 L 280 317.5" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
   <text x="315" y="282" class="edge-text">Streams build progress</text>
 </svg>
