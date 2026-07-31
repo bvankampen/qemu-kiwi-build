@@ -554,8 +554,10 @@
         <package name="open-vm-tools" arch="x86_64"/>
         <package name="kernel-default-base"/>
     </packages>
-    <packages type="image" profiles="Vagrant,Vagrant-parallels">
+    <packages type="image" profiles="Vagrant">
         <package name="kernel-default-base"/>
+    </packages>
+    <packages type="image" profiles="Vagrant,Vagrant-parallels">
         <package name="nfs-client"/>
         <package name="sudo"/>
     </packages>
