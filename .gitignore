@@ -1,0 +1,25 @@
+# Build output directory
+target_image/
+
+# KIWI box cache directories
+kiwi_boxes/
+.kiwi_boxes/
+
+# Cloned/cached kiwi repository
+kiwi/
+
+# Parallels ISO files
+parallels_iso/*.iso
+
+*.log
+*.tmp
+*.swp
+.DS_Store
+*.bak
+
+# Unignore AGENTS.md for AI agent instructions
+!AGENTS.md
+
+.venv
+
+image_description/root
