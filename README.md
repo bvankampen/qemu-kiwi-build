@@ -172,16 +172,20 @@ python3 kiwi-build.py -i leap16 --console
 
 ---
 
-## Parallels Guest Tools Integration
+## Parallels Guest Tools & Automated Box Packaging
 
-If you want to build a Vagrant box compatible with **Parallels Desktop**, the tool supports automatic installation of the guest tools:
+If you want to build a Vagrant box compatible with **Parallels Desktop**, the tool supports automatic installation of the guest tools and automated host packaging:
 
 1. Locate the Parallels tools ISO files on your system (see `./parallels_iso/README.md` for standard paths on macOS, Windows, and Linux).
 2. Copy them into `./parallels_iso/`:
    - `prl-tools-lin.iso` (for `x86_64`)
    - `prl-tools-lin-arm.iso` (for `aarch64` / Apple Silicon)
 3. Ensure `--no-parallels` is not set.
-4. Run the script. The orchestrator will automatically swap the profile to `Vagrant-parallels`, copy the tools into the image overlay path dynamically, mount it as a loop device during chroot build execution, compile kernel modules, and cleanly remove them afterwards.
+4. Run the script. The orchestrator will:
+   - Automatically swap the profile to `Vagrant-parallels`.
+   - Copy the tools into the image overlay path dynamically.
+   - Mount it as a loop device during chroot build execution, compile kernel modules, and cleanly remove them afterwards.
+   - **Automated Host Conversion & Packaging**: After a successful build, if the host machine has Parallels Desktop Command-Line tools (`prlctl`, `prl_convert`) and `qemu-img` installed, the script automatically converts the resulting libvirt-based box into a native Parallels Vagrant box (`*.vagrant.parallels.box`). This conversion uses a highly-optimized, architecture-agnostic pipeline that is fully compatible with both **Intel** and **Apple Silicon (ARM64)** Macs.
 
 ---
 

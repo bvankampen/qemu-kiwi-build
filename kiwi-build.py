@@ -934,6 +934,127 @@ kiwi-ng result bundle --id 0 --target-dir /result --bundle-dir /bundle
 
     if build_status == 0:
         print("\nNative QEMU Box build completed successfully!")
+        if profile == 'Vagrant-parallels':
+            # Resolve tool paths, including standard non-PATH fallback locations
+            prlctl_path = shutil.which('prlctl')
+            if not prlctl_path:
+                for path in ['/usr/local/bin/prlctl', '/Applications/Parallels Desktop.app/Contents/MacOS/prlctl']:
+                    if os.path.isfile(path) and os.access(path, os.X_OK):
+                        prlctl_path = path
+                        break
+                        
+            prl_convert_path = shutil.which('prl_convert')
+            if not prl_convert_path:
+                for path in ['/usr/local/bin/prl_convert', '/Applications/Parallels Desktop.app/Contents/MacOS/prl_convert']:
+                    if os.path.isfile(path) and os.access(path, os.X_OK):
+                        prl_convert_path = path
+                        break
+
+            qemu_img_path = shutil.which('qemu-img')
+            if not qemu_img_path:
+                for path in ['/opt/homebrew/bin/qemu-img', '/usr/local/bin/qemu-img']:
+                    if os.path.isfile(path) and os.access(path, os.X_OK):
+                        qemu_img_path = path
+                        break
+
+            if prlctl_path and prl_convert_path and qemu_img_path:
+                print("\n[ INFO ]: Detected Parallels command-line tools and 'qemu-img' on host. Automatically converting libvirt box to Parallels format...")
+                import glob
+                import tarfile
+                
+                # Find the generated libvirt box
+                box_files = [f for f in glob.glob(os.path.join(abs_out_dir, "*.vagrant.libvirt.box")) if target_arch in f]
+                if box_files:
+                    box_files.sort(key=os.path.getmtime, reverse=True)
+                    input_box = box_files[0]
+                    
+                    temp_dir = os.path.join(abs_out_dir, f"convert_parallels_{timestamp}")
+                    os.makedirs(temp_dir, exist_ok=True)
+                    vm_name = f"kiwi_box_convert_{timestamp}"
+                    vmdk_path = os.path.join(temp_dir, "box.vmdk")
+                    hdd_dir = os.path.join(temp_dir, "box.hdd")
+                    pvm_dir = os.path.join(temp_dir, f"{vm_name}.pvm")
+                    
+                    try:
+                        print(f"  - Extracting {os.path.basename(input_box)}...")
+                        with tarfile.open(input_box, "r") as tar:
+                            tar.extract("box.img", path=temp_dir)
+                            
+                        print("  - Converting virtual disk (QCOW2 -> VMDK)...")
+                        cmd_qemu = [qemu_img_path, "convert", "-f", "qcow2", os.path.join(temp_dir, "box.img"), "-O", "vmdk", vmdk_path]
+                        subprocess.run(cmd_qemu, check=True, stdout=subprocess.DEVNULL)
+                        
+                        print("  - Converting VMDK to Parallels native .hdd bundle...")
+                        cmd_conv = [prl_convert_path, vmdk_path, f"--dst={hdd_dir}", "--allow-no-os", "--stand-alone-disk"]
+                        subprocess.run(cmd_conv, check=True, stdout=subprocess.DEVNULL)
+                        
+                        print("  - Creating blank Parallels VM shell...")
+                        cmd_create = [prlctl_path, "create", vm_name, "--no-hdd", "--distribution", "opensuse", "--dst", temp_dir]
+                        subprocess.run(cmd_create, check=True, stdout=subprocess.DEVNULL)
+                        
+                        print("  - Injecting native .hdd into VM bundle...")
+                        shutil.move(hdd_dir, os.path.join(pvm_dir, "box.hdd"))
+                        
+                        print("  - Configuring VM hard disk attachment...")
+                        subprocess.run([prlctl_path, "set", vm_name, "--device-add", "hdd", "--image", os.path.join(pvm_dir, "box.hdd")], check=True, stdout=subprocess.DEVNULL)
+                        
+                        print("  - Optimizing Parallels VM settings...")
+                        subprocess.run([prlctl_path, "set", vm_name, "--device-set", "cdrom0", "--disconnect"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        subprocess.run([prlctl_path, "set", vm_name, "--device-set", "net0", "--type", "shared"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        
+                        print("  - Unregistering conversion helper VM...")
+                        subprocess.run([prlctl_path, "unregister", vm_name], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        
+                        print("  - Structuring Parallels Vagrant Box directory...")
+                        package_dir = os.path.join(temp_dir, "package")
+                        os.makedirs(package_dir, exist_ok=True)
+                        shutil.move(pvm_dir, os.path.join(package_dir, "box.pvm"))
+                        
+                        metadata_content = '{\n  "provider": "parallels"\n}\n'
+                        with open(os.path.join(package_dir, "metadata.json"), "w") as f:
+                            f.write(metadata_content)
+                            
+                        vagrantfile_content = """Vagrant.configure("2") do |config|
+  config.vm.provider "parallels" do |prl|
+    prl.optimize_power_consumption = false
+    prl.customize ["set", :id, "--nested-virt", "on"]
+  end
+end
+"""
+                        with open(os.path.join(package_dir, "Vagrantfile"), "w") as f:
+                            f.write(vagrantfile_content)
+                            
+                        output_box = input_box.replace(".libvirt.box", ".parallels.box")
+                        if output_box == input_box:
+                            output_box = os.path.join(abs_out_dir, f"result-Vagrant-parallels-{target_arch}-{timestamp}.box")
+                            
+                        print(f"  - Packaging final box to {os.path.basename(output_box)}...")
+                        with tarfile.open(output_box, "w:gz") as tar:
+                            tar.add(os.path.join(package_dir, "metadata.json"), arcname="metadata.json")
+                            tar.add(os.path.join(package_dir, "Vagrantfile"), arcname="Vagrantfile")
+                            tar.add(os.path.join(package_dir, "box.pvm"), arcname="box.pvm")
+                            
+                        print(f"[ INFO ]: Automatically created Parallels Vagrant box successfully at {output_box}!")
+                    except Exception as e:
+                        print(f"[ ERROR ]: Failed to automatically convert and package Parallels box: {e}", file=sys.stderr)
+                    finally:
+                        # Always clean up the temporary registered VM
+                        try:
+                            subprocess.run([prlctl_path, "unregister", vm_name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        except Exception:
+                            pass
+                        # Clean up temp dir
+                        if os.path.exists(temp_dir):
+                            try:
+                                shutil.rmtree(temp_dir)
+                            except Exception:
+                                pass
+                else:
+                    print("[ WARNING ]: Could not find the generated .libvirt.box file for conversion.")
+            else:
+                print("\n[ INFO ]: Built box for Vagrant-parallels profile.")
+                print("         To convert this box to a native Parallels Desktop box format automatically on host:")
+                print("         Ensure 'prlctl', 'prl_convert' (from Parallels Desktop Pro/Business) and 'qemu-img' are installed on your PATH.")
     else:
         print("\n==================================================", file=sys.stderr)
         print("Error: Native QEMU Box build failed inside VM!", file=sys.stderr)
