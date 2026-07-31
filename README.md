@@ -202,6 +202,7 @@ If you want to build a Vagrant box compatible with **Parallels Desktop**, the to
 ## Technical Highlights & Design Patterns
 
 * **Self-Bootstrapping**: No `pip install` or virtual environment setup is required on the host system. The script takes care of virtualenv initialization, activation, and missing dependencies (`paramiko`) at startup.
+* **Upstream Template Alignment**: The `config.xml` and `config.sh` files for `leap15` and `leap16` are derived entirely from the official Open Build Service (OBS) `Minimal.kiwi` templates, augmented cleanly with automatic Vagrant user registration and seamless Parallels Tools installation handlers.
 * **macOS Slirp Port Wedging Avoidance**: Connecting to local port forwardings (`127.0.0.1:10022`) too early can cause slirp connections to lock up on certain macOS architectures. The script avoids this by waiting for QEMU serial-stdout to emit boot-ready markers before starting any TCP connections.
 * **Host xattr & 9p Permission Handover**: Different operating systems support different Extended Attributes (`xattr`). The script automatically assays directory compatibility to configure the correct 9p filesystem security model (`mapped-xattr`, `mapped`, or `none`).
 * **Automated CI Readiness**: Writes a standard `result.code` file containing the guest command execution exit status, making it effortless to run inside GitLab CI, GitHub Actions, or Jenkins.
