@@ -77,8 +77,8 @@ function vagrantSetup {
     # - apply some recommended ssh settings
 
     echo "Add user vagrant"
-    # create vagrant user
-    useradd vagrant
+    # create vagrant user if not exists
+    id vagrant &>/dev/null || useradd vagrant
 
     # insert the default insecure ssh key from here:
     # https://github.com/hashicorp/vagrant/blob/master/keys/vagrant.pub
