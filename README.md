@@ -27,28 +27,7 @@ Building OS appliances with [SUSE KIWI](https://osuse_opensuse_org.github.io/kiw
 
 This project solves this by orchestrating a headless **QEMU virtual machine** that boots a pre-configured openSUSE/Ubuntu "box" system. The host's selected image description and output directories are shared with the guest VM using native **VirtIO-9p** folder sharing. Commands are executed inside the guest VM via an automated SSH connection, streaming unbuffered, real-time stdout and stderr output back to your host terminal.
 
-```
-┌───────────────────────────────── Host (Linux or macOS) ──────────────────────────────────┐
-│                                                                                          │
-│  ┌─────────────────────────┐               Spawns              ┌──────────────────────┐  │
-│  │  kiwi-build.py (Python)  ├─────────────────────────────────>│       QEMU VM        │  │
-│  └────────────┬────────────┘                                  └───┬──────────────┬───┘  │
-│               │                                                   │              │       │
-│               │ Establishes SSH (paramiko)                        │ Mounts 9p    │       │
-│               ▼                                                   ▼              │       │
-│  ┌─────────────────────────┐       Shared via VirtIO-9p       ┌──────────────┐   │       │
-│  │   Real-time CLI Logs    │<─────────────────────────────────┤ /description │   │       │
-│  │    & Progress Bar       │ (image_descriptions/ <OS>/ config)└──────────────┘   │       │
-│  └─────────────────────────┘                                                     │       │
-│                                                               Shared via VirtIO-9p│       │
-│                                                                                  ▼       │
-│                                                               ┌──────────────┐           │
-│                                                               │   /bundle    │<──────────┘
-│                                                               └──────┬───────┘
-│                                                                      │ (target_image/ output)
-│                                                                      ▼
-└──────────────────────────────────────────────────────────────────────────────────────────┘
-```
+![Architecture Diagram](docs/architecture.svg)
 
 ---
 
