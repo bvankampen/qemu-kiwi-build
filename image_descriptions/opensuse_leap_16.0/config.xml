@@ -563,7 +563,6 @@
         <!-- Parallels installation specific packages -->
         <package name="fuse"/>
         <package name="net-tools"/>
-        <package name="insserv-compat"/>
         <package name="policycoreutils"/>
         <package name="policycoreutils-devel"/>
         <package name="kernel-default"/>
