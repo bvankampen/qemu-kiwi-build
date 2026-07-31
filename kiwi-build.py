@@ -397,6 +397,10 @@ def main():
         '--debug', action='store_true',
         help="Run kiwi-ng inside the guest VM in debug mode (highly verbose)"
     )
+    parser.add_argument(
+        '--console', action='store_true',
+        help="Just start and boot the box VM with SSH/console enabled, without running the automated build"
+    )
 
     args, remaining = parser.parse_known_args()
 
@@ -599,6 +603,7 @@ def main():
     print(f"  Cache Dir:         {abs_cache_dir}")
     print(f"  Repository URL:    {repo_url}")
     print(f"  KIWI Debug Mode:   {'Enabled' if args.debug else 'Disabled'}")
+    print(f"  Interactive Mode:  {'Console-only (No build)' if args.console else 'Automated Build'}")
     if extra_cmd:
         print(f"  Extra KIWI Args:   {extra_cmd}")
     print("==================================================")
@@ -769,6 +774,67 @@ def main():
         print("Error: Failed to connect to VM SSH service after multiple attempts.")
         proc.kill()
         sys.exit(1)
+
+    if args.console:
+        print("\n==================================================")
+        print("[ INFO    ]: QEMU Box VM is booted and ready!")
+        print("  - Host SSH Port:   10022")
+        print("  - Credentials:     root / linux (or vagrant / vagrant)")
+        print("  - SSH Command:")
+        print("    ssh root@127.0.0.1 -p 10022 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null")
+        print("==================================================")
+        
+        # Mount the shared folders inside the VM automatically for the user
+        try:
+            ssh_client.exec_command(
+                "mkdir -p /description /bundle && "
+                "mountpoint -q /description || mount -t 9p -o trans=virtio,version=9p2000.L,msize=262144 kiwidescription /description && "
+                "mountpoint -q /bundle || mount -t 9p -o trans=virtio,version=9p2000.L,msize=262144 kiwibundle /bundle"
+            )
+            print("[ INFO    ]: Automatically mounted shared directories under /description and /bundle inside guest.")
+        except Exception as e:
+            print(f"Warning: Failed to automatically mount directories inside VM: {e}")
+            
+        print("==================================================")
+        print("VM is running in interactive manual mode.")
+        print("Press Ctrl+C to terminate and gracefully shutdown the VM.")
+        print("==================================================")
+        
+        try:
+            while proc.poll() is None:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\nInteractive VM session interrupted by user.")
+        
+        print("\n--------------------------------------------------")
+        print("Shutting down VM...")
+        print("--------------------------------------------------")
+        try:
+            transport = ssh_client.get_transport()
+            chan_off = transport.open_session()
+            chan_off.exec_command("poweroff")
+            chan_off.close()
+        except Exception:
+            pass
+        
+        try:
+            ssh_client.close()
+        except Exception:
+            pass
+            
+        try:
+            proc.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            print("Force terminating QEMU process...")
+            proc.kill()
+            
+        result_code_path = os.path.join(abs_out_dir, 'result.code')
+        try:
+            with open(result_code_path, 'w') as f:
+                f.write("0\n")
+        except Exception:
+            pass
+        sys.exit(0)
 
     debug_flag = "--debug" if args.debug else ""
 

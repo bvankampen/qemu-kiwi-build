@@ -112,7 +112,7 @@ usage: kiwi-build.py [-h] [-i {leap15,leap16}] [-b {leap,tumbleweed,ubuntu,unive
                      [-p PROFILE] [-a ARCH] [-o OUTPUT_DIR] [-c CACHE_DIR]
                      [-d DESC_DIR] [-r REPO_URL] [-m MEMORY] [-s SMP]
                      [--cpu CPU] [--machine MACHINE] [--accel {auto,true,false}]
-                     [--no-parallels] [-S PARALLELS_DIR] [-l] [-v] [-n] [--debug]
+                     [--no-parallels] [-S PARALLELS_DIR] [-l] [-v] [-n] [--debug] [--console]
 ```
 
 | Argument | Short | Default | Description |
@@ -136,6 +136,7 @@ usage: kiwi-build.py [-h] [-i {leap15,leap16}] [-b {leap,tumbleweed,ubuntu,unive
 | `--verbose`   | `-v` | `False` | Show raw QEMU serial console output in addition to build logs |
 | `--dry-run`   | `-n` | `False` | Print the formulated QEMU command and exit without starting the VM |
 | `--debug`     | | `False` | Run `kiwi-ng` in debug mode inside the VM (verbose progress output) |
+| `--console`   | | `False` | Just start and boot the box VM with SSH/console enabled, without running the automated build |
 
 ### Examples
 
@@ -162,6 +163,11 @@ python3 kiwi-build.py -v
 **5. Run with custom memory allocation and raw repository overrides:**
 ```bash
 python3 kiwi-build.py -m 16384 -s 8 -r "https://download.opensuse.org/tumbleweed/repo/oss/"
+```
+
+**6. Start and boot a box VM interactively to log in manually over SSH:**
+```bash
+python3 kiwi-build.py -i leap16 --console
 ```
 
 ---
