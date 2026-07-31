@@ -30,14 +30,14 @@
       <stop offset="100%" stop-color="#0f172a" />
     </linearGradient>
 
-    <!-- Markers for Arrows -->
-    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <!-- Markers for Arrows with slight offsets to prevent overlaps -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b" />
     </marker>
-    <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#519312" />
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#1d4ed8" />
     </marker>
   </defs>
@@ -53,7 +53,7 @@
     .edge-text-green { font-family: system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 11px; fill: #16a34a; }
   </style>
 
-  <!-- Background Canvas Grid (Optional clean subtle look) -->
+  <!-- Background Canvas -->
   <rect width="100%" height="100%" fill="#fafafa" rx="12" />
 
   <!-- 1. Host Boundary Box -->
@@ -111,35 +111,35 @@
     <text x="592" y="300" class="node-text-sm" fill="#e2f8a4">&amp; packages Zypper</text>
   </g>
 
-  <!-- Flow Edges (Arrows & Connectors) -->
+  <!-- Flow Edges (Orthogonal with clean 10px rounded corners) -->
 
   <!-- A. Spawns VM: kiwi-build.py -> QEMU VM border -->
-  <path d="M 270 120 L 352 120" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrow-blue)" />
-  <text x="280" y="112" class="edge-text-blue">1. Spawns VM</text>
+  <path d="M 270 142.5 L 350 142.5" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrow-blue)" />
+  <text x="280" y="134" class="edge-text-blue">1. Spawns VM</text>
 
   <!-- B. SSH Tunnel: kiwi-build.py -> kiwi-ng builder -->
-  <path d="M 160 180 L 160 215 C 160 250 260 250 320 250 L 565 250" fill="none" stroke="#1d4ed8" stroke-width="1.5" marker-end="url(#arrow-blue)" />
-  <text x="175" y="242" class="edge-text-blue">2. Establishes SSH session</text>
+  <path d="M 160 180 L 160 220 A 10 10 0 0 0 170 230 L 565 230" fill="none" stroke="#1d4ed8" stroke-width="1.5" marker-end="url(#arrow-blue)" />
+  <text x="175" y="222" class="edge-text-blue">2. Establishes SSH session</text>
 
   <!-- C. /description mount: Host files (image_descriptions/) -> /description VM -->
-  <path d="M 250 85 C 310 85 310 185 382 185" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="2 2" marker-end="url(#arrow)" />
-  <text x="282" y="165" class="edge-text">Mounts Host</text>
-  <text x="282" y="177" class="edge-text">image_descriptions/</text>
+  <path d="M 270 160 L 320 160 A 10 10 0 0 1 330 170 L 330 187.5 A 10 10 0 0 0 340 197.5 L 380 197.5" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="2 2" marker-end="url(#arrow)" />
+  <text x="282" y="148" class="edge-text">Mounts Host</text>
+  <text x="282" y="158" class="edge-text">image_descriptions/</text>
 
   <!-- D. /bundle mount: Host files (target_image/) <- /bundle VM -->
-  <path d="M 250 385 C 310 385 310 315 382 315" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="2 2" marker-start="url(#arrow)" />
-  <text x="282" y="360" class="edge-text">Mounts Host</text>
-  <text x="282" y="372" class="edge-text">target_image/</text>
+  <path d="M 280 290 L 320 290 A 10 10 0 0 1 330 300 L 330 317.5 A 10 10 0 0 0 340 327.5 L 380 327.5" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="2 2" marker-start="url(#arrow)" />
+  <text x="282" y="348" class="edge-text">Mounts Host</text>
+  <text x="282" y="358" class="edge-text">target_image/</text>
 
   <!-- E. Read config: /description -> kiwi-ng builder -->
-  <path d="M 535 198 L 610 198 L 610 210" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
-  <text x="542" y="190" class="edge-text">Reads config.xml</text>
+  <path d="M 535 197.5 L 565 197.5" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
+  <text x="540" y="190" class="edge-text">Reads config.xml</text>
 
   <!-- F. Write results: kiwi-ng builder -> /bundle -->
-  <path d="M 610 320 L 610 330 L 535 330" fill="none" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)" />
-  <text x="542" y="345" class="edge-text-green">Outputs image &amp; logs</text>
+  <path d="M 575 327.5 L 545 327.5" fill="none" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)" />
+  <text x="540" y="345" class="edge-text-green">Outputs image &amp; logs</text>
 
   <!-- G. Output Logs stream: kiwi-ng builder -> CLI Logs (Unbuffered) -->
-  <path d="M 575 295 L 430 295 C 320 295 320 315 278 315" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
-  <text x="310" y="288" class="edge-text">Streams build progress</text>
+  <path d="M 575 290 L 320 290 A 10 10 0 0 0 310 300 L 310 307.5 A 10 10 0 0 1 300 317.5 L 280 317.5" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
+  <text x="315" y="282" class="edge-text">Streams build progress</text>
 </svg>
