@@ -119,6 +119,18 @@ BOX_CONFIGS = {
     }
 }
 
+# Pre-defined image configurations
+IMAGE_CONFIGS = {
+    'leap15': {
+        'desc_dir': './image_descriptions/opensuse_leap_15.6',
+        'repo_url': 'https://download.opensuse.org/distribution/leap/15.6/repo/oss'
+    },
+    'leap16': {
+        'desc_dir': './image_descriptions/opensuse_leap_16.0',
+        'repo_url': 'https://download.opensuse.org/distribution/leap/16.0/repo/oss'
+    }
+}
+
 
 def download_file(url, dest_path):
     print(f"Downloading {url} to {dest_path}...")
@@ -310,6 +322,10 @@ def main():
         description="Run KIWI system boxbuild VM natively on Linux and macOS using QEMU with Paramiko SSH runner."
     )
     parser.add_argument(
+        '-i', '--image', default='leap15', choices=['leap15', 'leap16'],
+        help="Target OS image configuration to build: 'leap15' (Leap 15.6) or 'leap16' (Leap 16.0) (default: leap15)"
+    )
+    parser.add_argument(
         '-b', '--box', default='leap', choices=['leap', 'tumbleweed', 'ubuntu', 'universal'],
         help="Name of the box/distribution template to use (default: leap)"
     )
@@ -330,12 +346,12 @@ def main():
         help="Directory where the KIWI boxes are cached (default: ./kiwi_boxes)"
     )
     parser.add_argument(
-        '-d', '--desc-dir', default='./image_description',
-        help="Directory containing the KIWI image description (default: ./image_description)"
+        '-d', '--desc-dir', default=None,
+        help="Directory containing the KIWI image description (default: dynamically set based on --image)"
     )
     parser.add_argument(
-        '-r', '--repo-url', default='https://download.opensuse.org/distribution/leap/15.6/repo/oss',
-        help="URL of the package repository to configure in KIWI (default: Leap 15.6 repo)"
+        '-r', '--repo-url', default=None,
+        help="URL of the package repository to configure in KIWI (default: dynamically set based on --image)"
     )
     parser.add_argument(
         '-m', '--memory', default='8192',
@@ -418,8 +434,18 @@ def main():
         profile = 'Vagrant-parallels'
         print("Note: Parallels tools requested. Auto-switching profile to 'Vagrant-parallels'.")
 
+    # Get image configuration and resolve defaults
+    img_name = args.image
+    if img_name not in IMAGE_CONFIGS:
+        print(f"Error: Image template '{img_name}' is not supported.")
+        sys.exit(1)
+    
+    img_cfg = IMAGE_CONFIGS[img_name]
+    desc_dir = args.desc_dir or img_cfg['desc_dir']
+    repo_url = args.repo_url or img_cfg['repo_url']
+
     # Resolve absolute paths
-    abs_desc_dir = os.path.abspath(args.desc_dir)
+    abs_desc_dir = os.path.abspath(desc_dir)
     abs_out_dir = os.path.abspath(args.output_dir)
     abs_cache_dir = os.path.abspath(args.cache_dir)
     box_dir = os.path.join(abs_cache_dir, box_name)
@@ -556,6 +582,7 @@ def main():
     print("==================================================")
     print("Native QEMU Box Build VM Configuration:")
     print(f"  QEMU Binary:       {qemu_bin}")
+    print(f"  Target Image:      {img_name}")
     print(f"  Box distribution:  {box_name}")
     print(f"  Target Arch:       {target_arch}")
     print(f"  KIWI Profile:      {profile}")
@@ -566,7 +593,7 @@ def main():
     print(f"  Description Dir:   {abs_desc_dir}")
     print(f"  Output Dir:        {abs_out_dir}")
     print(f"  Cache Dir:         {abs_cache_dir}")
-    print(f"  Repository URL:    {args.repo_url}")
+    print(f"  Repository URL:    {repo_url}")
     if extra_cmd:
         print(f"  Extra KIWI Args:   {extra_cmd}")
     print("==================================================")
@@ -749,7 +776,7 @@ echo "[ INFO    ]: Cleaning up guest build directory..."
 rm -rf /result/*
 
 echo "[ INFO    ]: Starting KIWI build inside VM..."
-kiwi-ng --logfile /bundle/result.log --profile {profile} system build --description /description --target-dir /result --set-repo {args.repo_url} {extra_cmd}
+kiwi-ng --logfile /bundle/result.log --profile {profile} system build --description /description --target-dir /result --set-repo {repo_url} {extra_cmd}
 
 echo "[ INFO    ]: Bundling build results back to host..."
 kiwi-ng result bundle --id 0 --target-dir /result --bundle-dir /bundle

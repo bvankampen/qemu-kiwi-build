@@ -22,4 +22,5 @@ parallels_iso/*.iso
 
 .venv
 
-image_description/root
+image_descriptions/*/root
+image_descriptions/**/root

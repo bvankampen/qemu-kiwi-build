@@ -15,7 +15,7 @@ By leveraging native QEMU and standard SSH communication via Python's `paramiko`
 - [Getting Started](#getting-started)
 - [Command Line Usage](#command-line-usage)
   - [Available Arguments](#available-arguments)
-  - [Supported Box Distributions](#supported-box-distributions)
+  - [Supported Image Configurations](#supported-image-configurations)
 - [Parallels Guest Tools Integration](#parallels-guest-tools-integration)
 - [Technical Highlights & Design Patterns](#technical-highlights--design-patterns)
 
@@ -25,7 +25,7 @@ By leveraging native QEMU and standard SSH communication via Python's `paramiko`
 
 Building OS appliances with [SUSE KIWI](https://osuse_opensuse_org.github.io/kiwi/) often requires running the tool on the target OS or inside a privileged VM with kernel-level capabilities to create filesystems, bootstrap packages, and build partition tables.
 
-This project solves this by orchestrating a headless **QEMU virtual machine** that boots a pre-configured openSUSE/Ubuntu "box" system. The host's image description and output directories are shared with the guest VM using native **VirtIO-9p** folder sharing. Commands are executed inside the guest VM via an automated SSH connection, streaming unbuffered, real-time stdout and stderr output back to your host terminal.
+This project solves this by orchestrating a headless **QEMU virtual machine** that boots a pre-configured openSUSE/Ubuntu "box" system. The host's selected image description and output directories are shared with the guest VM using native **VirtIO-9p** folder sharing. Commands are executed inside the guest VM via an automated SSH connection, streaming unbuffered, real-time stdout and stderr output back to your host terminal.
 
 ```
 ┌───────────────────────────────── Host (Linux or macOS) ──────────────────────────────────┐
@@ -38,7 +38,7 @@ This project solves this by orchestrating a headless **QEMU virtual machine** th
 │               ▼                                                   ▼              │       │
 │  ┌─────────────────────────┐       Shared via VirtIO-9p       ┌──────────────┐   │       │
 │  │   Real-time CLI Logs    │<─────────────────────────────────┤ /description │   │       │
-│  │    & Progress Bar       │   (image_description/ config)    └──────────────┘   │       │
+│  │    & Progress Bar       │ (image_descriptions/ <OS>/ config)└──────────────┘   │       │
 │  └─────────────────────────┘                                                     │       │
 │                                                               Shared via VirtIO-9p│       │
 │                                                                                  ▼       │
@@ -59,7 +59,7 @@ This project solves this by orchestrating a headless **QEMU virtual machine** th
 3. **Environment Injection**: If Parallels Tools or any overlays are required, they are automatically placed into the image description overlays.
 4. **VM Bootstrapping**: QEMU is launched headlessly. The script monitors stdout for login readiness, automatically configures guest networking/SSH, sets root credentials, and starts the SSH daemon.
 5. **KIWI Build execution**: It connects to the VM over SSH and issues build instructions:
-   - Mounts the image description folder as `/description` (via `virtio-9p`).
+   - Mounts the selected OS image description folder as `/description` (via `virtio-9p`).
    - Mounts the target output bundle folder as `/bundle` (via `virtio-9p`).
    - Runs `kiwi-ng system build` inside the guest OS.
    - Streams build step progress, zypper downloads, and warnings in real-time.
@@ -84,10 +84,13 @@ qemu-kiwi-build/
 ├── kiwi-build.py                # Main orchestration entrypoint (Python script)
 ├── README.md                    # Project documentation (this file)
 │
-├── image_description/           # The KIWI image description directory
-│   ├── config.xml               # Main KIWI image configuration (profiles, packages, sizes, partitions)
-│   ├── config.sh                # Post-install shell script run inside target chroot during image build
-│   └── root/                    # Optional overlay directory injected into the final appliance image
+├── image_descriptions/          # Organized folder for different OS image descriptions
+│   ├── opensuse_leap_15.6/      # openSUSE Leap 15.6 config and scripts
+│   │   ├── config.xml           # Leap 15.6 KIWI image configuration (profiles, packages)
+│   │   └── config.sh            # Post-install script executed during Leap 15.6 image build
+│   └── opensuse_leap_16.0/      # openSUSE Leap 16.0 config and scripts (Leap 16)
+│       ├── config.xml           # Leap 16.0 KIWI image configuration (profiles, packages)
+│       └── config.sh            # Post-install script executed during Leap 16.0 image build
 │
 ├── parallels_iso/               # Cache folder for Parallels Guest Tools ISOs
 │   └── README.md                # Guide on locating and naming Parallels tools ISO files
@@ -103,10 +106,16 @@ qemu-kiwi-build/
 
 ## Getting Started
 
-To run a default build using the openSUSE Leap box (x86_64 default) with the Vagrant profile:
+To run a default build using the openSUSE Leap 15.6 description (`leap15` default):
 
 ```bash
 python3 kiwi-build.py
+```
+
+To run a build using the openSUSE Leap 16.0 description (`leap16`):
+
+```bash
+python3 kiwi-build.py -i leap16
 ```
 
 *Note: On your first run, the script will create `.venv`, install `paramiko`, download the system box image (~200MB to ~500MB), and then launch the build. Subsequent runs will use the cached box immediately.*
@@ -120,22 +129,23 @@ python3 kiwi-build.py
 You can pass several options to `kiwi-build.py` to customize the virtual machine or the target KIWI build.
 
 ```bash
-usage: kiwi-build.py [-h] [-b {leap,tumbleweed,ubuntu,universal}] [-p PROFILE] [-a ARCH]
-                     [-o OUTPUT_DIR] [-c CACHE_DIR] [-d DESC_DIR] [-r REPO_URL]
-                     [-m MEMORY] [-s SMP] [--cpu CPU] [--machine MACHINE]
-                     [--accel {auto,true,false}] [--no-parallels] [-S PARALLELS_DIR]
-                     [-l] [-v] [-n]
+usage: kiwi-build.py [-h] [-i {leap15,leap16}] [-b {leap,tumbleweed,ubuntu,universal}]
+                     [-p PROFILE] [-a ARCH] [-o OUTPUT_DIR] [-c CACHE_DIR]
+                     [-d DESC_DIR] [-r REPO_URL] [-m MEMORY] [-s SMP]
+                     [--cpu CPU] [--machine MACHINE] [--accel {auto,true,false}]
+                     [--no-parallels] [-S PARALLELS_DIR] [-l] [-v] [-n]
 ```
 
 | Argument | Short | Default | Description |
 | :--- | :--- | :--- | :--- |
+| `--image` | `-i` | `leap15` | Select target image to build: `leap15` (Leap 15.6) or `leap16` (Leap 16.0) |
 | `--box` | `-b` | `leap` | The distribution template box to use: `leap`, `tumbleweed`, `ubuntu`, `universal` |
 | `--profile` | `-p` | `Vagrant` | KIWI build profile to run (e.g. `Vagrant`, `kvm`, `VMware`, `MS-HyperV`, `Cloud`, etc.) |
 | `--arch` | `-a` | *Host Arch* | Target architecture: `x86_64` or `aarch64` |
 | `--output-dir`| `-o` | `./target_image`| Host output folder where built appliance images and logs are exported |
 | `--cache-dir` | `-c` | `./kiwi_boxes` | Host folder where downloaded box OS system images are cached |
-| `--desc-dir`  | `-d` | `./image_description`| Host folder containing the KIWI image definition files |
-| `--repo-url`  | `-r` | *Leap 15.6 OSS*| URL of the package repository used to bootstrap the KIWI image |
+| `--desc-dir`  | `-d` | *Dynamic* | Host folder containing the KIWI image definition files (set dynamically by `--image`) |
+| `--repo-url`  | `-r` | *Dynamic* | URL of the package repository used to bootstrap the KIWI image (set dynamically by `--image`) |
 | `--memory`    | `-m` | `8192` (MB) | Host memory in MB to allocate to the build VM |
 | `--smp`       | `-s` | `4` | Number of CPU cores to allocate to the build VM |
 | `--cpu`       | | *Auto* | Optional QEMU CPU model override (e.g., `host`, `max`) |
@@ -149,22 +159,27 @@ usage: kiwi-build.py [-h] [-b {leap,tumbleweed,ubuntu,universal}] [-p PROFILE] [
 
 ### Examples
 
-**1. Build for Apple Silicon (AArch64) on an M1/M2/M3 Mac:**
+**1. Build the new openSUSE Leap 16.0 image configuration:**
 ```bash
-python3 kiwi-build.py -b tumbleweed -a aarch64 -p Vagrant
+python3 kiwi-build.py -i leap16
 ```
 
-**2. List all available VM build templates:**
+**2. Build for Apple Silicon (AArch64) on an M1/M2/M3 Mac using openSUSE Leap 16.0:**
+```bash
+python3 kiwi-build.py -i leap16 -b tumbleweed -a aarch64 -p Vagrant
+```
+
+**3. List all available VM build templates:**
 ```bash
 python3 kiwi-build.py --list-boxes
 ```
 
-**3. Run with full verbose VM booting sequence logs:**
+**4. Run with full verbose VM booting sequence logs:**
 ```bash
 python3 kiwi-build.py -v
 ```
 
-**4. Run with custom memory allocation and raw repository overrides:**
+**5. Run with custom memory allocation and raw repository overrides:**
 ```bash
 python3 kiwi-build.py -m 16384 -s 8 -r "https://download.opensuse.org/tumbleweed/repo/oss/"
 ```
