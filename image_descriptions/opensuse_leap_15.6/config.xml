@@ -366,6 +366,7 @@
         <package name="fbiterm"/>
         <package name="e2fsprogs"/>
         <package name="fuse"/>
+        <package name="fuse3"/>
         <package name="net-tools"/>
         <package name="insserv-compat"/>
         <package name="policycoreutils"/>
