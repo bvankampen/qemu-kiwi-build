@@ -167,12 +167,34 @@ elif [[ "$kiwi_profiles" =~ Vagrant ]]; then
     systemctl mask systemd-firstboot.service
 
 elif rpm -q --whatprovides jeos-firstboot >/dev/null; then
-    # Enable jeos-firstboot
-    mkdir -p /var/lib/YaST2
-    touch /var/lib/YaST2/reconfig_system
+    # Disable jeos-firstboot
+    echo "Disabling jeos-firstboot..."
+    rm -rf /var/lib/YaST2/reconfig_system
+    systemctl disable jeos-firstboot.service || true
+    systemctl mask jeos-firstboot.service || true
+    systemctl disable systemd-firstboot.service || true
+    systemctl mask systemd-firstboot.service || true
+fi
 
-    systemctl mask systemd-firstboot.service
-    systemctl enable jeos-firstboot.service
+# Set timezone to Europe/Amsterdam
+echo "Setting timezone to Europe/Amsterdam..."
+ln -sf /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime
+if [ -f /etc/sysconfig/clock ]; then
+    sed -i 's/^TIMEZONE=.*/TIMEZONE="Europe\/Amsterdam"/' /etc/sysconfig/clock
+else
+    echo 'TIMEZONE="Europe/Amsterdam"' > /etc/sysconfig/clock
+    echo 'DEFAULT_TIMEZONE="Europe/Amsterdam"' >> /etc/sysconfig/clock
+fi
+echo "Europe/Amsterdam" > /etc/timezone
+
+# Set keyboard layout to US
+echo "Setting keyboard layout to US..."
+mkdir -p /etc
+echo "KEYMAP=us" > /etc/vconsole.conf
+if [ -f /etc/sysconfig/keyboard ]; then
+    sed -i 's/^KEYTABLE=.*/KEYTABLE="us.map.gz"/' /etc/sysconfig/keyboard
+else
+    echo 'KEYTABLE="us.map.gz"' > /etc/sysconfig/keyboard
 fi
 
 # Enable firewalld if installed except on VMware
