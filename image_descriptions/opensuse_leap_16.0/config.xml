@@ -564,6 +564,7 @@
     <packages type="image" profiles="Vagrant-parallels">
         <!-- Parallels installation specific packages -->
         <package name="fuse"/>
+        <package name="fuse3"/>
         <package name="net-tools"/>
         <package name="policycoreutils"/>
         <package name="policycoreutils-devel"/>

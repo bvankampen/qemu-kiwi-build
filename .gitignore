@@ -24,3 +24,5 @@ parallels_iso/*.iso
 
 image_descriptions/*/root
 image_descriptions/**/root
+
+Vagrantfile
