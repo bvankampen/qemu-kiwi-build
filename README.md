@@ -113,6 +113,7 @@ usage: kiwi-build.py [-h] [-i {leap15,leap16}] [-b {leap,tumbleweed,ubuntu,unive
                      [-d DESC_DIR] [-r REPO_URL] [-m MEMORY] [-s SMP]
                      [--cpu CPU] [--machine MACHINE] [--accel {auto,true,false}]
                      [--no-parallels] [-S PARALLELS_DIR] [-l] [-v] [-n] [--debug] [--console]
+                     [--custom-ca-rpm CUSTOM_CA_RPM] [--custom-ca-cert CUSTOM_CA_CERT]
 ```
 
 | Argument | Short | Default | Description |
@@ -137,6 +138,8 @@ usage: kiwi-build.py [-h] [-i {leap15,leap16}] [-b {leap,tumbleweed,ubuntu,unive
 | `--dry-run`   | `-n` | `False` | Print the formulated QEMU command and exit without starting the VM |
 | `--debug`     | | `False` | Run `kiwi-ng` in debug mode inside the VM (verbose progress output) |
 | `--console`   | | `False` | Just start and boot the box VM with SSH/console enabled, without running the automated build |
+| `--custom-ca-rpm` | | `None` | Path to a custom CA RPM package file to be installed during the bootstrap phase |
+| `--custom-ca-cert`| | `None` | Path to a custom root CA certificate file (`.crt` or `.pem`) to be trusted during the build |
 
 ### Examples
 
@@ -168,6 +171,16 @@ python3 kiwi-build.py -m 16384 -s 8 -r "https://download.opensuse.org/tumbleweed
 **6. Start and boot a box VM interactively to log in manually over SSH:**
 ```bash
 python3 kiwi-build.py -i leap16 --console
+```
+
+**7. Build with a custom CA RPM package (for secure internal HTTPS repositories):**
+```bash
+python3 kiwi-build.py -i leap16 -p Cloud --custom-ca-rpm /path/to/rhn-org-trusted-ssl-cert-osimage.noarch.rpm
+```
+
+**8. Build with a raw root CA certificate file directly (.crt or .pem):**
+```bash
+python3 kiwi-build.py -i leap16 -p Cloud --custom-ca-cert /path/to/my-company-root-ca.crt
 ```
 
 ---
