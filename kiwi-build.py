@@ -57,6 +57,7 @@ import ctypes
 import datetime
 import socket
 import time
+import atexit
 
 # Pre-defined box configurations from kiwi-boxed-plugin configuration
 BOX_CONFIGS = {
@@ -409,6 +410,14 @@ def main():
         '--console', action='store_true',
         help="Just start and boot the box VM with SSH/console enabled, without running the automated build"
     )
+    parser.add_argument(
+        '--custom-ca-rpm', default=None,
+        help="Path to a custom CA RPM file to be installed during the bootstrap phase of the build"
+    )
+    parser.add_argument(
+        '--custom-ca-cert', default=None,
+        help="Path to a custom root CA certificate file (.crt or .pem) to be trusted during the build"
+    )
 
     args, remaining = parser.parse_known_args()
 
@@ -475,6 +484,89 @@ def main():
     os.makedirs(abs_desc_dir, exist_ok=True)
     os.makedirs(abs_out_dir, exist_ok=True)
     os.makedirs(box_dir, exist_ok=True)
+
+    # Register automatic cleanup for temporary files / overlays
+    def cleanup_temp_files():
+        if with_parallels and args.parallels_dir:
+            target_overlay_dir = os.path.join(abs_desc_dir, 'root', 'tmp')
+            symlink_path = os.path.join(target_overlay_dir, 'parallels_iso')
+            if os.path.exists(symlink_path):
+                try:
+                    shutil.rmtree(symlink_path)
+                    print("Cleaned up copied parallels_iso overlay directory.")
+                except Exception:
+                    pass
+        if args.custom_ca_rpm:
+            custom_repo_dir = os.path.join(abs_desc_dir, 'custom_repo')
+            if os.path.exists(custom_repo_dir):
+                try:
+                    shutil.rmtree(custom_repo_dir)
+                    print("Cleaned up custom CA RPM repository directory.")
+                except Exception:
+                    pass
+        if args.custom_ca_cert:
+            custom_cert_dir = os.path.join(abs_desc_dir, 'root', 'etc', 'pki', 'trust', 'anchors')
+            target_cert_path = os.path.join(custom_cert_dir, os.path.basename(os.path.abspath(args.custom_ca_cert)))
+            if os.path.exists(target_cert_path):
+                try:
+                    os.remove(target_cert_path)
+                    print("Cleaned up custom CA Cert from root overlay.")
+                except Exception:
+                    pass
+            # Clean up the parent directories if they are empty to avoid leaving trash
+            for path in [
+                custom_cert_dir,
+                os.path.join(abs_desc_dir, 'root', 'etc', 'pki', 'trust'),
+                os.path.join(abs_desc_dir, 'root', 'etc', 'pki'),
+                os.path.join(abs_desc_dir, 'root', 'etc'),
+                os.path.join(abs_desc_dir, 'root'),
+            ]:
+                if os.path.exists(path) and not os.listdir(path):
+                    try:
+                        os.rmdir(path)
+                    except Exception:
+                        pass
+
+    atexit.register(cleanup_temp_files)
+
+    # Handle custom CA RPM injection
+    if args.custom_ca_rpm:
+        abs_ca_rpm_path = os.path.abspath(args.custom_ca_rpm)
+        if os.path.isfile(abs_ca_rpm_path):
+            custom_repo_dir = os.path.join(abs_desc_dir, 'custom_repo')
+            os.makedirs(custom_repo_dir, exist_ok=True)
+            # Remove any old RPMs in that directory first to avoid conflicts
+            for f in os.listdir(custom_repo_dir):
+                if f.endswith('.rpm'):
+                    try:
+                        os.remove(os.path.join(custom_repo_dir, f))
+                    except Exception:
+                        pass
+            target_rpm_path = os.path.join(custom_repo_dir, os.path.basename(abs_ca_rpm_path))
+            try:
+                shutil.copy2(abs_ca_rpm_path, target_rpm_path)
+                print(f"Copied custom CA RPM to local repo at {target_rpm_path}")
+            except Exception as e:
+                print(f"Warning: Failed to copy custom CA RPM to custom_repo: {e}")
+        else:
+            print(f"Error: Custom CA RPM file not found at {abs_ca_rpm_path}")
+            sys.exit(1)
+
+    # Handle custom CA Cert injection
+    if args.custom_ca_cert:
+        abs_ca_cert_path = os.path.abspath(args.custom_ca_cert)
+        if os.path.isfile(abs_ca_cert_path):
+            custom_cert_dir = os.path.join(abs_desc_dir, 'root', 'etc', 'pki', 'trust', 'anchors')
+            os.makedirs(custom_cert_dir, exist_ok=True)
+            target_cert_path = os.path.join(custom_cert_dir, os.path.basename(abs_ca_cert_path))
+            try:
+                shutil.copy2(abs_ca_cert_path, target_cert_path)
+                print(f"Copied custom CA Cert to root overlay at {target_cert_path}")
+            except Exception as e:
+                print(f"Warning: Failed to copy custom CA Cert to overlay: {e}")
+        else:
+            print(f"Error: Custom CA Cert file not found at {abs_ca_cert_path}")
+            sys.exit(1)
 
     # Handle Parallels overlays
     if with_parallels and args.parallels_dir:
@@ -861,8 +953,29 @@ mountpoint -q /bundle || mount -t 9p -o trans=virtio,version=9p2000.L,msize=2621
 echo "[ INFO    ]: Cleaning up guest build directory..."
 rm -rf /result/*
 
+# 1. Install custom CA certificate if present in the overlay
+if [ -d /description/root/etc/pki/trust/anchors ] && [ "$(ls -A /description/root/etc/pki/trust/anchors)" ]; then
+    echo "[ INFO    ]: Custom CA certificate(s) detected in description overlay..."
+    mkdir -p /etc/pki/trust/anchors/
+    cp -n /description/root/etc/pki/trust/anchors/* /etc/pki/trust/anchors/
+    echo "[ INFO    ]: Updating guest CA certificates..."
+    update-ca-certificates || true
+fi
+
+# 2. Install custom CA RPM if present
+CUSTOM_CA_ARGS=""
+if [ -d /description/custom_repo ]; then
+    echo "[ INFO    ]: Custom CA RPM repository detected..."
+    CA_PKG_NAME=$(rpm -qp --queryformat '%{{NAME}}' /description/custom_repo/*.rpm)
+    echo "[ INFO    ]: Detected CA package name: $CA_PKG_NAME"
+    echo "[ INFO    ]: Installing custom CA RPM inside the guest VM host context..."
+    rpm -Uvh --force /description/custom_repo/*.rpm || true
+    update-ca-certificates || true
+    CUSTOM_CA_ARGS="--add-repo file:///description/custom_repo/,rpm-dir,custom_ca_repo,90,false,false --add-bootstrap-package $CA_PKG_NAME"
+fi
+
 echo "[ INFO    ]: Starting KIWI build inside VM..."
-kiwi-ng {debug_flag} --logfile /bundle/result.log --profile {profile} system build --description /description --target-dir /result --set-repo {repo_url} {extra_cmd}
+kiwi-ng {debug_flag} --logfile /bundle/result.log --profile {profile} system build --description /description --target-dir /result --set-repo {repo_url} $CUSTOM_CA_ARGS {extra_cmd}
 
 echo "[ INFO    ]: Bundling build results back to host..."
 kiwi-ng result bundle --id 0 --target-dir /result --bundle-dir /bundle
@@ -1085,17 +1198,6 @@ end
             print("--------------------------------------------------", file=sys.stderr)
         print("==================================================", file=sys.stderr)
     
-    # Clean up any copied Parallels overlay files to keep the description directory clean
-    if with_parallels and args.parallels_dir:
-        target_overlay_dir = os.path.join(abs_desc_dir, 'root', 'tmp')
-        symlink_path = os.path.join(target_overlay_dir, 'parallels_iso')
-        if os.path.exists(symlink_path):
-            try:
-                shutil.rmtree(symlink_path)
-                print("Cleaned up copied parallels_iso overlay directory.")
-            except Exception as e:
-                print(f"Warning: Failed to clean up parallels_iso overlay: {e}")
-
     sys.exit(build_status)
 
 
