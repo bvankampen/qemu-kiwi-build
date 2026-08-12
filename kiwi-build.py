@@ -330,8 +330,16 @@ def main():
         help="Name of the box/distribution template to use (default: leap)"
     )
     parser.add_argument(
-        '-p', '--profile', default='Vagrant',
-        help="KIWI profile to build inside the VM (default: Vagrant)"
+        '-p', '--profile', default=None,
+        help=(
+            "KIWI profile to build inside the VM. "
+            "Possible options for 'leap15' (Leap 15.6): "
+            "Vagrant, Vagrant-parallels, Cloud, VMware, kvm, kvm-and-xen, MS-HyperV, RaspberryPi. "
+            "Possible options for 'leap16' (Leap 16.0): "
+            "Vagrant, Vagrant-parallels, Cloud, VMware, kvm, kvm-encrypt, "
+            "kvm-and-xen, kvm-and-xen-encrypt, MS-HyperV, RaspberryPi, s390x-kvm, s390x-Cloud, "
+            "s390x-dasd, s390x-dasd-Cloud, s390x-fcp, s390x-fcp-Cloud, ppc64le-4096-raw, ppc64le-4096-qcow2"
+        )
     )
     parser.add_argument(
         '-a', '--arch', default='',
@@ -412,6 +420,11 @@ def main():
         for box, arch_dict in BOX_CONFIGS.items():
             print(f"  - {box:<12} ({', '.join(arch_dict.keys())})")
         sys.exit(0)
+
+    if not args.profile:
+        parser.print_help()
+        print("\nError: The '--profile' (-p) argument is required.")
+        sys.exit(1)
 
     # Detect architecture
     host_machine = platform.machine()

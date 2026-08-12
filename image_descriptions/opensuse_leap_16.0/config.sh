@@ -192,9 +192,9 @@ echo "Setting keyboard layout to US..."
 mkdir -p /etc
 echo "KEYMAP=us" > /etc/vconsole.conf
 if [ -f /etc/sysconfig/keyboard ]; then
-    sed -i 's/^KEYTABLE=.*/KEYTABLE="us.map.gz"/' /etc/sysconfig/keyboard
+    sed -i 's/^KEYTABLE=.*/KEYTABLE="us"/' /etc/sysconfig/keyboard
 else
-    echo 'KEYTABLE="us.map.gz"' > /etc/sysconfig/keyboard
+    echo 'KEYTABLE="us"' > /etc/sysconfig/keyboard
 fi
 
 # Enable firewalld if installed except on VMware
