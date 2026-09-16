@@ -129,6 +129,10 @@ IMAGE_CONFIGS = {
     'leap16': {
         'desc_dir': './image_descriptions/opensuse_leap_16.0',
         'repo_url': 'https://download.opensuse.org/distribution/leap/16.0/repo/oss'
+    },
+    'sles16': {
+        'desc_dir': './image_descriptions/sles_16.0',
+        'repo_url': '{rmt_server}/repo/SUSE/Products/SLE-Product-SLES/16.0/{arch}/product/'
     }
 }
 
@@ -320,11 +324,12 @@ def main():
             pass
 
     parser = argparse.ArgumentParser(
-        description="Run KIWI system boxbuild VM natively on Linux and macOS using QEMU with Paramiko SSH runner."
+        description="Run KIWI system boxbuild VM natively on Linux and macOS using QEMU with Paramiko SSH runner.",
+        formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument(
-        '-i', '--image', default='leap15', choices=['leap15', 'leap16'],
-        help="Target OS image configuration to build: 'leap15' (Leap 15.6) or 'leap16' (Leap 16.0) (default: leap15)"
+        '-i', '--image', default='leap15', choices=['leap15', 'leap16', 'sles16'],
+        help="Target OS image configuration to build: 'leap15' (Leap 15.6), 'leap16' (Leap 16.0) or 'sles16' (SLES 16.0) (default: leap15)"
     )
     parser.add_argument(
         '-b', '--box', default='leap', choices=['leap', 'tumbleweed', 'ubuntu', 'universal'],
@@ -333,13 +338,21 @@ def main():
     parser.add_argument(
         '-p', '--profile', default=None,
         help=(
-            "KIWI profile to build inside the VM. "
-            "Possible options for 'leap15' (Leap 15.6): "
-            "Vagrant, Vagrant-parallels, Cloud, VMware, kvm, kvm-and-xen, MS-HyperV, RaspberryPi. "
-            "Possible options for 'leap16' (Leap 16.0): "
-            "Vagrant, Vagrant-parallels, Cloud, VMware, kvm, kvm-encrypt, "
-            "kvm-and-xen, kvm-and-xen-encrypt, MS-HyperV, RaspberryPi, s390x-kvm, s390x-Cloud, "
-            "s390x-dasd, s390x-dasd-Cloud, s390x-fcp, s390x-fcp-Cloud, ppc64le-4096-raw, ppc64le-4096-qcow2"
+            "KIWI profile to build inside the VM.\n\n"
+            "Possible options for 'leap15' (Leap 15.6):\n"
+            "  Vagrant, Vagrant-parallels, Cloud, VMware, kvm, kvm-and-xen, MS-HyperV,\n"
+            "  RaspberryPi\n\n"
+            "Possible options for 'leap16' (Leap 16.0):\n"
+            "  Vagrant, Vagrant-parallels, Cloud, VMware, kvm, kvm-encrypt, kvm-and-xen,\n"
+            "  kvm-and-xen-encrypt, MS-HyperV, RaspberryPi, s390x-kvm, s390x-Cloud,\n"
+            "  s390x-dasd, s390x-dasd-Cloud, s390x-fcp, s390x-fcp-Cloud, ppc64le-4096-raw,\n"
+            "  ppc64le-4096-qcow2\n\n"
+            "Possible options for 'sles16' (SLES 16.0):\n"
+            "  Vagrant, Vagrant-parallels, Cloud, Cloud-sap, KubeVirt-Cloud, VMware,\n"
+            "  VMware-sap, MS-HyperV, MS-HyperV-sap, RaspberryPi, kvm, kvm-encrypt,\n"
+            "  kvm-and-xen, kvm-and-xen-sap, kvm-and-xen-encrypt, s390x-kvm, s390x-Cloud,\n"
+            "  s390x-dasd, s390x-dasd-Cloud, s390x-fcp, s390x-fcp-Cloud, ppc64le-4096-raw,\n"
+            "  ppc64le-4096-qcow2, ppc64le-512-raw, ppc64le-512-qcow2"
         )
     )
     parser.add_argument(
@@ -361,6 +374,10 @@ def main():
     parser.add_argument(
         '-r', '--repo-url', default=None,
         help="URL of the package repository to configure in KIWI (default: dynamically set based on --image)"
+    )
+    parser.add_argument(
+        '-R', '--rmt-server', default=None,
+        help="Hostname or IP address of the local Repository Mirroring Tool (RMT) server (required when building SLES images)"
     )
     parser.add_argument(
         '-m', '--memory', default='8192',
@@ -473,6 +490,26 @@ def main():
     img_cfg = IMAGE_CONFIGS[img_name]
     desc_dir = args.desc_dir or img_cfg['desc_dir']
     repo_url = args.repo_url or img_cfg['repo_url']
+
+    # If the repository URL contains {rmt_server}, ensure that --rmt-server is provided
+    if '{rmt_server}' in repo_url:
+        if not args.rmt_server:
+            print("Error: The '--rmt-server' (-R) argument is mandatory when building this SLES image.")
+            print("Please specify your local RMT server using: -R <rmt_server_name>")
+            sys.exit(1)
+        
+        # Default to https:// if no protocol is specified by the user
+        rmt_server_val = args.rmt_server
+        if not rmt_server_val.startswith("http://") and not rmt_server_val.startswith("https://"):
+            rmt_server_val = "https://" + rmt_server_val
+        
+        # Remove trailing slash if present
+        rmt_server_val = rmt_server_val.rstrip('/')
+        
+        repo_url = repo_url.format(rmt_server=rmt_server_val, arch=target_arch)
+    else:
+        # For other repositories, just format the architecture if a placeholder exists
+        repo_url = repo_url.format(arch=target_arch)
 
     # Resolve absolute paths
     abs_desc_dir = os.path.abspath(desc_dir)

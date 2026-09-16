@@ -67,9 +67,13 @@ qemu-kiwi-build/
 │   ├── opensuse_leap_15.6/      # openSUSE Leap 15.6 config and scripts
 │   │   ├── config.xml           # Leap 15.6 KIWI image configuration (profiles, packages)
 │   │   └── config.sh            # Post-install script executed during Leap 15.6 image build
-│   └── opensuse_leap_16.0/      # openSUSE Leap 16.0 config and scripts (Leap 16)
-│       ├── config.xml           # Leap 16.0 KIWI image configuration (profiles, packages)
-│       └── config.sh            # Post-install script executed during Leap 16.0 image build
+│   ├── opensuse_leap_16.0/      # openSUSE Leap 16.0 config and scripts (Leap 16)
+│   │   ├── config.xml           # Leap 16.0 KIWI image configuration (profiles, packages)
+│   │   └── config.sh            # Post-install script executed during Leap 16.0 image build
+│   └── sles_16.0/               # SUSE Linux Enterprise Server 16.0 config and scripts (SLES16)
+│       ├── config.xml           # SLES 16.0 KIWI image configuration (profiles, packages)
+│       ├── config.sh            # Post-install script executed during SLES 16.0 image build
+│       └── disk.sh              # Partitioning & disk configuration script for SLES 16.0 Build
 │
 ├── parallels_iso/               # Cache folder for Parallels Guest Tools ISOs
 │   └── README.md                # Guide on locating and naming Parallels tools ISO files
@@ -108,9 +112,9 @@ python3 kiwi-build.py -i leap16
 You can pass several options to `kiwi-build.py` to customize the virtual machine or the target KIWI build.
 
 ```bash
-usage: kiwi-build.py [-h] [-i {leap15,leap16}] [-b {leap,tumbleweed,ubuntu,universal}]
+usage: kiwi-build.py [-h] [-i {leap15,leap16,sles16}] [-b {leap,tumbleweed,ubuntu,universal}]
                      [-p PROFILE] [-a ARCH] [-o OUTPUT_DIR] [-c CACHE_DIR]
-                     [-d DESC_DIR] [-r REPO_URL] [-m MEMORY] [-s SMP]
+                     [-d DESC_DIR] [-r REPO_URL] [-R RMT_SERVER] [-m MEMORY] [-s SMP]
                      [--cpu CPU] [--machine MACHINE] [--accel {auto,true,false}]
                      [--no-parallels] [-S PARALLELS_DIR] [-l] [-v] [-n] [--debug] [--console]
                      [--custom-ca-rpm CUSTOM_CA_RPM] [--custom-ca-cert CUSTOM_CA_CERT]
@@ -118,7 +122,7 @@ usage: kiwi-build.py [-h] [-i {leap15,leap16}] [-b {leap,tumbleweed,ubuntu,unive
 
 | Argument | Short | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `--image` | `-i` | `leap15` | Select target image to build: `leap15` (Leap 15.6) or `leap16` (Leap 16.0) |
+| `--image` | `-i` | `leap15` | Select target image to build: `leap15` (Leap 15.6), `leap16` (Leap 16.0), or `sles16` (SLES 16.0) |
 | `--box` | `-b` | `leap` | The distribution template box to use: `leap`, `tumbleweed`, `ubuntu`, `universal` |
 | `--profile` | `-p` | `Vagrant` | KIWI build profile to run (e.g. `Vagrant`, `kvm`, `VMware`, `MS-HyperV`, `Cloud`, etc.) |
 | `--arch` | `-a` | *Host Arch* | Target architecture: `x86_64` or `aarch64` |
@@ -126,6 +130,7 @@ usage: kiwi-build.py [-h] [-i {leap15,leap16}] [-b {leap,tumbleweed,ubuntu,unive
 | `--cache-dir` | `-c` | `./kiwi_boxes` | Host folder where downloaded box OS system images are cached |
 | `--desc-dir`  | `-d` | *Dynamic* | Host folder containing the KIWI image definition files (set dynamically by `--image`) |
 | `--repo-url`  | `-r` | *Dynamic* | URL of the package repository used to bootstrap the KIWI image (set dynamically by `--image`) |
+| `--rmt-server`| `-R` | `None` | Hostname or IP of the Repository Mirroring Tool (RMT) server (mandatory when building SLES images, e.g. `rmt.p6lab.net` or `http://rmt.local`) |
 | `--memory`    | `-m` | `8192` (MB) | Host memory in MB to allocate to the build VM |
 | `--smp`       | `-s` | `4` | Number of CPU cores to allocate to the build VM |
 | `--cpu`       | | *Auto* | Optional QEMU CPU model override (e.g., `host`, `max`) |
@@ -148,37 +153,47 @@ usage: kiwi-build.py [-h] [-i {leap15,leap16}] [-b {leap,tumbleweed,ubuntu,unive
 python3 kiwi-build.py -i leap16
 ```
 
-**2. Build for Apple Silicon (AArch64) on an M1/M2/M3 Mac using openSUSE Leap 16.0:**
+**2. Build SLES16 Vagrant image using a local RMT server:**
+```bash
+python3 kiwi-build.py -i sles16 -p Vagrant -R rmt.p6lab.net
+```
+
+**3. Build SLES16 Cloud image using an HTTP RMT server:**
+```bash
+python3 kiwi-build.py -i sles16 -p Cloud -R http://myrmt.local
+```
+
+**4. Build for Apple Silicon (AArch64) on an M1/M2/M3 Mac using openSUSE Leap 16.0:**
 ```bash
 python3 kiwi-build.py -i leap16 -b tumbleweed -a aarch64 -p Vagrant
 ```
 
-**3. List all available VM build templates:**
+**5. List all available VM build templates:**
 ```bash
 python3 kiwi-build.py --list-boxes
 ```
 
-**4. Run with full verbose VM booting sequence logs:**
+**6. Run with full verbose VM booting sequence logs:**
 ```bash
 python3 kiwi-build.py -v
 ```
 
-**5. Run with custom memory allocation and raw repository overrides:**
+**7. Run with custom memory allocation and raw repository overrides:**
 ```bash
 python3 kiwi-build.py -m 16384 -s 8 -r "https://download.opensuse.org/tumbleweed/repo/oss/"
 ```
 
-**6. Start and boot a box VM interactively to log in manually over SSH:**
+**8. Start and boot a box VM interactively to log in manually over SSH:**
 ```bash
 python3 kiwi-build.py -i leap16 --console
 ```
 
-**7. Build with a custom CA RPM package (for secure internal HTTPS repositories):**
+**9. Build with a custom CA RPM package (for secure internal HTTPS repositories):**
 ```bash
 python3 kiwi-build.py -i leap16 -p Cloud --custom-ca-rpm /path/to/rhn-org-trusted-ssl-cert-osimage.noarch.rpm
 ```
 
-**8. Build with a raw root CA certificate file directly (.crt or .pem):**
+**10. Build with a raw root CA certificate file directly (.crt or .pem):**
 ```bash
 python3 kiwi-build.py -i leap16 -p Cloud --custom-ca-cert /path/to/my-company-root-ca.crt
 ```
