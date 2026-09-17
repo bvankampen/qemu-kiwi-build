@@ -215,6 +215,18 @@ if [ -n "${kiwi_profiles:-}" ] && [[ "$kiwi_profiles" =~ Vagrant ]]; then
         echo "Executing baseVagrantSetup..."
         baseVagrantSetup
     fi
+    # Ensure sysconfig network configuration file exists. Vagrant's built-in
+    # SUSE/openSUSE guest plugin expects /etc/sysconfig/network/config to exist
+    # to configure the hostname and networks. Without it, provisioning fails.
+    mkdir -p /etc/sysconfig/network
+    if [ ! -f /etc/sysconfig/network/config ]; then
+        touch /etc/sysconfig/network/config
+    fi
+    # setup DHCP on eth0 properly
+    cat << EOF > /etc/sysconfig/network/ifcfg-eth0
+STARTMODE=auto
+BOOTPROTO=dhcp
+EOF
 fi
 
 # Parallels Guest Tools Installation

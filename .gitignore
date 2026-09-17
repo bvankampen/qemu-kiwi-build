@@ -18,8 +18,7 @@ parallels_iso/*.iso
 .DS_Store
 *.bak
 
-# Unignore AGENTS.md for AI agent instructions
-!AGENTS.md
+AGENTS.md
 
 .venv
 
