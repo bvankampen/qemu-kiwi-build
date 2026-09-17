@@ -27,3 +27,4 @@ image_descriptions/*/root
 image_descriptions/**/root
 
 Vagrantfile
+.vagrant/    
