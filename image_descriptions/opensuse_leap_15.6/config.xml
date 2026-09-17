@@ -366,6 +366,8 @@
         <package name="dkms"/>
         <package name="perl"/>
         <package name="bc"/>
+        <package name="sysconfig"/>
+        <package name="sysconfig-network"/>
     </packages>
     <packages type="image" profiles="MS-HyperV">
         <package name="hyper-v"/>
