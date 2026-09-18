@@ -163,41 +163,45 @@ python3 kiwi-build.py -i sles16 -p Vagrant -R rmt.p6lab.net
 python3 kiwi-build.py -i sles16 -p Cloud -R http://myrmt.local
 ```
 
-**4. Build for Apple Silicon (AArch64) on an M1/M2/M3 Mac using openSUSE Leap 16.0:**
+**4. Build for Apple Silicon (AArch64) on an M1/M2/M3 Mac (openSUSE Leap 15.6):**
 ```bash
-python3 kiwi-build.py -i leap16 -b tumbleweed -a aarch64 -p Vagrant
+python3 kiwi-build.py --arch aarch64 --image leap15 --profile Vagrant-parallels
 ```
 
-**5. List all available VM build templates:**
+**5. Build for Apple Silicon (AArch64) on an M1/M2/M3 Mac (openSUSE Leap 16.0):**
+```bash
+python3 kiwi-build.py --arch aarch64 --image leap16 -b tumbleweed --profile Vagrant-parallels
+```
+
+**6. List all available VM build templates:**
 ```bash
 python3 kiwi-build.py --list-boxes
 ```
 
-**6. Run with full verbose VM booting sequence logs:**
+**7. Run with full verbose VM booting sequence logs:**
 ```bash
 python3 kiwi-build.py -v
 ```
 
-**7. Run with custom memory allocation and raw repository overrides:**
+**8. Run with custom memory allocation and raw repository overrides:**
 ```bash
 python3 kiwi-build.py -m 16384 -s 8 -r "https://download.opensuse.org/tumbleweed/repo/oss/"
 ```
 
-**8. Start and boot a box VM interactively to log in manually over SSH:**
+**9. Start and boot a box VM interactively to log in manually over SSH:**
 ```bash
 python3 kiwi-build.py -i leap16 --console
 ```
 
-**9. Build with a custom CA RPM package (for secure internal HTTPS repositories):**
+**10. Build with a custom CA RPM package (for secure internal HTTPS repositories):**
 ```bash
 python3 kiwi-build.py -i leap16 -p Cloud --custom-ca-rpm /path/to/rhn-org-trusted-ssl-cert-osimage.noarch.rpm
 ```
 
-**10. Build with a raw root CA certificate file directly (.crt or .pem):**
+**11. Build with a raw root CA certificate file directly (.crt or .pem):**
 ```bash
 python3 kiwi-build.py -i leap16 -p Cloud --custom-ca-cert /path/to/my-company-root-ca.crt
 ```
-
 ---
 
 ## Parallels Guest Tools & Automated Box Packaging
@@ -214,13 +218,15 @@ If you want to build a Vagrant box compatible with **Parallels Desktop**, the to
    - Copy the tools into the image overlay path dynamically.
    - Mount it as a loop device during chroot build execution, compile kernel modules, and cleanly remove them afterwards.
    - **Automated Host Conversion & Packaging**: After a successful build, if the host machine has Parallels Desktop Command-Line tools (`prlctl`, `prl_convert`) and `qemu-img` installed, the script automatically converts the resulting libvirt-based box into a native Parallels Vagrant box (`*.vagrant.parallels.box`). This conversion uses a highly-optimized, architecture-agnostic pipeline that is fully compatible with both **Intel** and **Apple Silicon (ARM64)** Macs.
-
+   - **Apple Silicon Compatibility**: On `aarch64` target boxes, the generated `Vagrantfile` automatically configures `--nested-virt off` to adhere to Apple Silicon hardware virtualization constraints, ensuring the VM boots reliably out of the box with `vagrant up`.
 ---
 
 ## Technical Highlights & Design Patterns
 
 * **Self-Bootstrapping**: No `pip install` or virtual environment setup is required on the host system. The script takes care of virtualenv initialization, activation, and missing dependencies (`paramiko`) at startup.
 * **Upstream Template Alignment**: The `config.xml` and `config.sh` files for `leap15` and `leap16` are derived entirely from the official Open Build Service (OBS) `Minimal.kiwi` templates, augmented cleanly with automatic Vagrant user registration and seamless Parallels Tools installation handlers.
+* **Multi-Architecture Console & UEFI**: Serial console parameters and GRUB boot settings are dynamically generated per architecture (`console=ttyAMA0,115200 console=tty0` on AArch64/ARM64 vs `console=ttyS0,115200 console=tty0` on x86_64) with full FAT32 UEFI partition sizing (128MB+), guaranteeing clean boot logging and display initialization under QEMU, Parallels Desktop, and cloud hypervisors.
+* **Multi-Interface Network Resilience**: Built-in network configs provide automated DHCP for standard and predictable virtio network devices across openSUSE `wicked` (Leap 15.6) and `NetworkManager` (Leap 16.0, SLES 16.0).
 * **macOS Slirp Port Wedging Avoidance**: Connecting to local port forwardings (`127.0.0.1:10022`) too early can cause slirp connections to lock up on certain macOS architectures. The script avoids this by waiting for QEMU serial-stdout to emit boot-ready markers before starting any TCP connections.
 * **Host xattr & 9p Permission Handover**: Different operating systems support different Extended Attributes (`xattr`). The script automatically assays directory compatibility to configure the correct 9p filesystem security model (`mapped-xattr`, `mapped`, or `none`).
 * **Automated CI Readiness**: Writes a standard `result.code` file containing the guest command execution exit status, making it effortless to run inside GitLab CI, GitHub Actions, or Jenkins.
