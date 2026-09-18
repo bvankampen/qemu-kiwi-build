@@ -1177,10 +1177,11 @@ kiwi-ng result bundle --id 0 --target-dir /result --bundle-dir /bundle
                         with open(os.path.join(package_dir, "metadata.json"), "w") as f:
                             f.write(metadata_content)
                             
-                        vagrantfile_content = """Vagrant.configure("2") do |config|
+                        nested_virt = "off" if target_arch == 'aarch64' else "on"
+                        vagrantfile_content = f"""Vagrant.configure("2") do |config|
   config.vm.provider "parallels" do |prl|
     prl.optimize_power_consumption = false
-    prl.customize ["set", :id, "--nested-virt", "on"]
+    prl.customize ["set", :id, "--nested-virt", "{nested_virt}"]
   end
 end
 """

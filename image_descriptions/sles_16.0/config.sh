@@ -240,13 +240,20 @@ if [[ "$kiwi_profiles" == *"s390x-fba"* ]] || [[ "$kiwi_profiles" == *"s390x-das
 fi
 
 # Add serial console parameters where needed
-if ! [[ "$kiwi_profiles" == *"s390x"* ]] && \
+ARCH=$(uname -m)
+if [[ "$ARCH" =~ ^(aarch64|arm64|arm) ]]; then
+	cmdline+=('console=ttyAMA0,115200' 'console=tty0')
+elif ! [[ "$kiwi_profiles" == *"s390x"* ]] && \
    ! [[ "$kiwi_profiles" == *"ppc64le"* ]]; then
 	cmdline+=('console=ttyS0,115200' 'console=tty0')
 fi
 
 if [[ "$kiwi_profiles" == *"HyperV"* ]]; then
-	cmdline+=('earlyprintk=ttyS0,115200' 'rootdelay=300')
+	if [[ "$ARCH" =~ ^(aarch64|arm64|arm) ]]; then
+		cmdline+=('rootdelay=300')
+	else
+		cmdline+=('earlyprintk=ttyS0,115200' 'rootdelay=300')
+	fi
 fi
 
 # Configure SELinux if installed

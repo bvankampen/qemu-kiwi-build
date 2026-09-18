@@ -112,9 +112,18 @@ if [ -x /usr/sbin/firewalld ] && [ "$kiwi_profiles" != "VMware" ]; then
     chkconfig firewalld on
 fi
 
-# Set GRUB2 to boot graphically (bsc#1097428)
-sed -Ei"" "s/#?GRUB_TERMINAL=.+$/GRUB_TERMINAL=gfxterm/g" /etc/default/grub
-sed -Ei"" "s/#?GRUB_GFXMODE=.+$/GRUB_GFXMODE=auto/g" /etc/default/grub
+# Set arch-appropriate console and GRUB2 settings
+ARCH=$(uname -m)
+cmdline=('rw' 'systemd.show_status=1')
+if [[ "$ARCH" =~ ^(aarch64|arm64|arm) ]]; then
+    cmdline+=('console=ttyAMA0,115200' 'console=tty0')
+else
+    cmdline+=('console=ttyS0,115200' 'console=tty0')
+fi
+if [ -e /etc/default/grub ]; then
+    sed -i "s#^GRUB_CMDLINE_LINUX_DEFAULT=.*\$#GRUB_CMDLINE_LINUX_DEFAULT=\"${cmdline[*]}\"#" /etc/default/grub
+    sed -Ei"" "s/#?GRUB_GFXMODE=.+$/GRUB_GFXMODE=auto/g" /etc/default/grub
+fi
 
 # Systemd controls the console font now
 echo FONT="$CONSOLE_FONT" >> /etc/vconsole.conf
@@ -222,8 +231,16 @@ if [ -n "${kiwi_profiles:-}" ] && [[ "$kiwi_profiles" =~ Vagrant ]]; then
     if [ ! -f /etc/sysconfig/network/config ]; then
         touch /etc/sysconfig/network/config
     fi
-    # setup DHCP on eth0 properly
+    # setup DHCP on network interfaces
     cat << EOF > /etc/sysconfig/network/ifcfg-eth0
+STARTMODE=auto
+BOOTPROTO=dhcp
+EOF
+    cat << EOF > /etc/sysconfig/network/ifcfg-enp0s5
+STARTMODE=auto
+BOOTPROTO=dhcp
+EOF
+    cat << EOF > /etc/sysconfig/network/ifcfg-enp0s1
 STARTMODE=auto
 BOOTPROTO=dhcp
 EOF
