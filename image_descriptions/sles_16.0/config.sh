@@ -240,7 +240,7 @@ if [[ "$kiwi_profiles" == *"s390x-fba"* ]] || [[ "$kiwi_profiles" == *"s390x-das
 fi
 
 # Add serial console parameters where needed
-ARCH=$(uname -m)
+ARCH="${ARCH:-${kiwi_arch:-$(uname -m)}}"
 if [[ "$ARCH" =~ ^(aarch64|arm64|arm) ]]; then
 	cmdline+=('console=ttyAMA0,115200' 'console=tty0')
 elif ! [[ "$kiwi_profiles" == *"s390x"* ]] && \

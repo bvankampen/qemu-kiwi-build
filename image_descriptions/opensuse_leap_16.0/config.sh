@@ -260,6 +260,7 @@ fi
 #======================================
 # Add default kernel boot options
 #--------------------------------------
+ARCH="${ARCH:-${kiwi_arch:-$(uname -m)}}"
 cmdline=('rw' 'quiet' 'systemd.show_status=1')
 
 if [[ "$kiwi_profiles" == *"s390x"* ]] && ! [[ "$kiwi_profiles" == *"kvm"* ]]; then

@@ -113,7 +113,7 @@ if [ -x /usr/sbin/firewalld ] && [ "$kiwi_profiles" != "VMware" ]; then
 fi
 
 # Set arch-appropriate console and GRUB2 settings
-ARCH=$(uname -m)
+ARCH="${ARCH:-${kiwi_arch:-$(uname -m)}}"
 cmdline=('rw' 'systemd.show_status=1')
 if [[ "$ARCH" =~ ^(aarch64|arm64|arm) ]]; then
     cmdline+=('console=ttyAMA0,115200' 'console=tty0')
